@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -154,11 +155,11 @@ func runInit(shell string, ignoreSwitchDirectory bool) error {
 		fmt.Fprint(os.Stdout, zshCompletion)
 		return nil
 	case "fish":
-		fmt.Fprint(os.Stdout, "# git-wt shell hook for fish\n")
+		io.WriteString(os.Stdout, "# git-wt shell hook for fish\n")
 		if !ignoreSwitchDirectory {
-			fmt.Fprint(os.Stdout, fishGitWrapper)
+			io.WriteString(os.Stdout, fishGitWrapper)
 		}
-		fmt.Fprint(os.Stdout, fishCompletion)
+		io.WriteString(os.Stdout, fishCompletion)
 		return nil
 	case "powershell":
 		fmt.Fprint(os.Stdout, "# git-wt shell hook for PowerShell\n")
