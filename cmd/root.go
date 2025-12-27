@@ -43,15 +43,15 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "git wt [branch]",
+	Use:   "git wt [branch|worktree]",
 	Short: "A Git subcommand that makes 'git worktree' simple",
 	Long: `git-wt is a Git subcommand that makes 'git worktree' simple.
 
 Examples:
   git wt                List all worktrees
-  git wt <branch>       Switch to worktree (create if not exists)
-  git wt -d <branch>    Delete worktree and branch (safe)
-  git wt -D <branch>    Force delete worktree and branch
+  git wt <branch|worktree>  Switch to worktree (create worktree/branch if needed)
+  git wt -d <branch|worktree>  Delete worktree and branch (safe)
+  git wt -D <branch|worktree>  Force delete worktree and branch
 
 Shell Integration:
   Add the following to your shell config to enable worktree switching and completion:

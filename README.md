@@ -6,9 +6,9 @@ A Git subcommand that makes `git worktree` simple.
 
 ``` console
 $ git wt                    # List all worktrees
-$ git wt <branch>           # Switch to worktree (create if not exists)
-$ git wt -d <branch>        # Delete worktree and branch (safe)
-$ git wt -D <branch>        # Force delete worktree and branch
+$ git wt <branch|worktree>  # Switch to worktree (create worktree/branch if needed)
+$ git wt -d <branch|worktree>  # Delete worktree and branch (safe)
+$ git wt -D <branch|worktree>  # Force delete worktree and branch
 ```
 
 ## Install
