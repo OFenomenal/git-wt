@@ -210,7 +210,7 @@ cd %q
 export PATH="%s:$PATH"
 eval "$(git wt --init bash)"
 git wt
-`, repoRoot, pathDir) //nostyle:funcfmt
+`, repoRoot, pathDir)
 			},
 		},
 		{
@@ -223,7 +223,7 @@ cd %q
 export PATH="%s:$PATH"
 eval "$(git wt --init zsh)"
 git wt
-`, repoRoot, pathDir) //nostyle:funcfmt
+`, repoRoot, pathDir)
 			},
 		},
 		{
@@ -235,7 +235,7 @@ cd %q
 set -x PATH %s $PATH
 git wt --init fish | source
 git wt
-`, repoRoot, pathDir) //nostyle:funcfmt
+`, repoRoot, pathDir)
 			},
 		},
 	}
@@ -781,7 +781,7 @@ eval "$(git wt --init bash)"
 # Test: git wt <branch> should cd to the worktree
 git wt shell-bash-test
 pwd
-`, repo.Root, filepath.Dir(binPath)) //nostyle:funcfmt
+`, repo.Root, filepath.Dir(binPath))
 
 	cmd := exec.Command("bash", "-c", script)
 	out, err := cmd.CombinedOutput()
@@ -819,7 +819,7 @@ eval "$(git wt --init zsh)"
 # Test: git wt <branch> should cd to the worktree
 git wt shell-zsh-test
 pwd
-`, repo.Root, filepath.Dir(binPath)) //nostyle:funcfmt
+`, repo.Root, filepath.Dir(binPath))
 
 	cmd := exec.Command("zsh", "-c", script)
 	out, err := cmd.CombinedOutput()
@@ -855,7 +855,7 @@ git wt --init fish | source
 # Test: git wt <branch> should cd to the worktree
 git wt shell-fish-test
 pwd
-`, repo.Root, filepath.Dir(binPath)) //nostyle:funcfmt
+`, repo.Root, filepath.Dir(binPath))
 
 	cmd := exec.Command("fish", "-c", script)
 	out, err := cmd.CombinedOutput()
@@ -1113,7 +1113,7 @@ eval "$(git wt --init bash)"
 # Test: git wt --no-switch-directory <branch> should NOT cd to the worktree
 git wt --no-switch-directory no-switch-bash-test
 pwd
-`, repoRoot, pathDir) //nostyle:funcfmt
+`, repoRoot, pathDir)
 			},
 		},
 		{
@@ -1129,7 +1129,7 @@ eval "$(git wt --init zsh)"
 # Test: git wt --no-switch-directory <branch> should NOT cd to the worktree
 git wt --no-switch-directory no-switch-zsh-test
 pwd
-`, repoRoot, pathDir) //nostyle:funcfmt
+`, repoRoot, pathDir)
 			},
 		},
 		{
@@ -1144,7 +1144,7 @@ git wt --init fish | source
 # Test: git wt --no-switch-directory <branch> should NOT cd to the worktree
 git wt --no-switch-directory no-switch-fish-test
 pwd
-`, repoRoot, pathDir) //nostyle:funcfmt
+`, repoRoot, pathDir)
 			},
 		},
 	}
@@ -1237,7 +1237,7 @@ func TestE2E_MultipleHooks(t *testing.T) {
 	repo.Commit("initial commit")
 
 	// Create worktree with multiple hooks
-	out, err := runGitWt(t, binPath, repo.Root, "--hook", "echo first > order.txt", "--hook", "echo second >> order.txt", "multi-hook-test") //nostyle:funcfmt
+	out, err := runGitWt(t, binPath, repo.Root, "--hook", "echo first > order.txt", "--hook", "echo second >> order.txt", "multi-hook-test")
 	if err != nil {
 		t.Fatalf("failed to create worktree with multiple hooks: %v\noutput: %s", err, out)
 	}
@@ -1324,7 +1324,7 @@ func TestE2E_HookFailureExitsWithError(t *testing.T) {
 	repo.Commit("initial commit")
 
 	// Create worktree with a failing hook followed by a successful hook
-	stdout, stderr, err := runGitWtStdout(t, binPath, repo.Root, "--hook", "exit 1", "--hook", "touch after-failure.txt", "hook-failure-test") //nostyle:funcfmt
+	stdout, stderr, err := runGitWtStdout(t, binPath, repo.Root, "--hook", "exit 1", "--hook", "touch after-failure.txt", "hook-failure-test")
 
 	// Command should fail with exit code 1
 	if err == nil {
@@ -1359,7 +1359,7 @@ func TestE2E_HookOutputToStderr(t *testing.T) {
 	repo.Commit("initial commit")
 
 	// Create worktree with a hook that outputs to stdout
-	stdout, stderr, err := runGitWtStdout(t, binPath, repo.Root, "--hook", "echo hook-output-test", "hook-output-test") //nostyle:funcfmt
+	stdout, stderr, err := runGitWtStdout(t, binPath, repo.Root, "--hook", "echo hook-output-test", "hook-output-test")
 	if err != nil {
 		t.Fatalf("failed to create worktree: %v\nstderr: %s", err, stderr)
 	}
@@ -1412,7 +1412,7 @@ Invoke-Expression (git wt --init powershell | Out-String)
 # Test: git wt <branch> should cd to the worktree
 git wt shell-pwsh-test
 Get-Location | Select-Object -ExpandProperty Path
-`, repo.Root, filepath.Dir(binPath)) //nostyle:funcfmt
+`, repo.Root, filepath.Dir(binPath))
 
 	cmd := exec.Command(pwshPath, "-NoProfile", "-Command", script)
 	out, err := cmd.CombinedOutput()

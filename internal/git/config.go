@@ -16,7 +16,7 @@ const (
 	configKeyCopyUntracked = "wt.copyuntracked"
 	configKeyCopyModified  = "wt.copymodified"
 	configKeyNoCopy        = "wt.nocopy"
-	configKeyHook         = "wt.hook"
+	configKeyHook          = "wt.hook"
 )
 
 // Config holds all wt configuration values.
