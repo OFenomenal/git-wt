@@ -47,7 +47,7 @@ _git_wt() {
     _get_comp_words_by_ref -n =: cur prev words cword 2>/dev/null || {
         cur="${COMP_WORDS[COMP_CWORD]}"
     }
-    __gitcomp_nl "$(command git-wt __complete "$cur" 2>/dev/null | grep -v '^:' | cut -f1)"
+    __gitcomp_nl "$(command git-wt __complete "$cur" 2>/dev/null | grep -v '^:' | grep -v '^-[^-]' | cut -f1)"
 }
 `
 
