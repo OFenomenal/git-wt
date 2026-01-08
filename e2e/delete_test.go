@@ -1,0 +1,615 @@
+// delete_test.go contains worktree/branch deletion tests:
+//   - TestE2E_DeleteWorktree: worktree deletion (safe, force, unmerged, multiple)
+//   - TestE2E_DeleteBranch: branch-only deletion
+//   - TestE2E_DeleteCurrentWorktree: deleting worktree while inside it
+package e2e
+
+import (
+	"bytes"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/k1LoW/exec"
+	"github.com/k1LoW/git-wt/testutil"
+)
+
+func TestE2E_DeleteWorktree(t *testing.T) {
+	t.Parallel()
+	binPath := buildBinary(t)
+
+	t.Run("safe_delete", func(t *testing.T) {
+		t.Parallel()
+		repo := testutil.NewTestRepo(t)
+		repo.CreateFile("README.md", "# Test")
+		repo.Commit("initial commit")
+
+		out, err := runGitWt(t, binPath, repo.Root, "to-delete")
+		if err != nil {
+			t.Fatalf("failed to create worktree: %v", err)
+		}
+		wtPath := worktreePath(out)
+
+		if _, err := os.Stat(wtPath); os.IsNotExist(err) {
+			t.Fatalf("worktree should exist at %s", wtPath)
+		}
+
+		out, err = runGitWt(t, binPath, repo.Root, "-d", "to-delete")
+		if err != nil {
+			t.Fatalf("git-wt -d failed: %v\noutput: %s", err, out)
+		}
+
+		if _, err := os.Stat(wtPath); !os.IsNotExist(err) {
+			t.Error("worktree should have been deleted")
+		}
+	})
+
+	t.Run("force_delete", func(t *testing.T) {
+		t.Parallel()
+		repo := testutil.NewTestRepo(t)
+		repo.CreateFile("README.md", "# Test")
+		repo.Commit("initial commit")
+
+		out, err := runGitWt(t, binPath, repo.Root, "unmerged")
+		if err != nil {
+			t.Fatalf("failed to create worktree: %v", err)
+		}
+		wtPath := worktreePath(out)
+
+		// Make a commit in the worktree (will be unmerged)
+		if err := os.WriteFile(filepath.Join(wtPath, "new.txt"), []byte("content"), 0600); err != nil {
+			t.Fatalf("failed to create file: %v", err)
+		}
+		cmd := exec.Command("git", "add", "-A")
+		cmd.Dir = wtPath
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("git add failed: %v", err)
+		}
+		cmd = exec.Command("git", "commit", "-m", "unmerged commit")
+		cmd.Dir = wtPath
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("git commit failed: %v", err)
+		}
+
+		out, err = runGitWt(t, binPath, repo.Root, "-D", "unmerged")
+		if err != nil {
+			t.Fatalf("git-wt -D failed: %v\noutput: %s", err, out)
+		}
+
+		if _, err := os.Stat(wtPath); !os.IsNotExist(err) {
+			t.Error("worktree should have been force deleted")
+		}
+	})
+
+	// PR #64 fix: worktree deletion succeeds even when branch deletion fails
+	t.Run("with_unmerged_branch", func(t *testing.T) {
+		t.Parallel()
+		repo := testutil.NewTestRepo(t)
+		repo.CreateFile("README.md", "# Test")
+		repo.Commit("initial commit")
+
+		out, err := runGitWt(t, binPath, repo.Root, "unmerged-branch")
+		if err != nil {
+			t.Fatalf("failed to create worktree: %v", err)
+		}
+		wtPath := worktreePath(out)
+
+		if err := os.WriteFile(filepath.Join(wtPath, "new.txt"), []byte("content"), 0600); err != nil {
+			t.Fatalf("failed to create file: %v", err)
+		}
+		cmd := exec.Command("git", "add", "-A")
+		cmd.Dir = wtPath
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("git add failed: %v", err)
+		}
+		cmd = exec.Command("git", "commit", "-m", "unmerged commit")
+		cmd.Dir = wtPath
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("git commit failed: %v", err)
+		}
+
+		// Delete worktree with -d (safe delete) - should succeed but not delete branch
+		out, err = runGitWt(t, binPath, repo.Root, "-d", "unmerged-branch")
+		if err != nil {
+			t.Fatalf("git-wt -d should succeed even when branch deletion fails: %v\noutput: %s", err, out)
+		}
+
+		if _, err := os.Stat(wtPath); !os.IsNotExist(err) {
+			t.Error("worktree should have been deleted")
+		}
+
+		if !strings.Contains(out, "failed to delete branch") {
+			t.Errorf("output should mention branch deletion failure, got: %s", out)
+		}
+		if !strings.Contains(out, "use -D to force") {
+			t.Errorf("output should suggest using -D to force, got: %s", out)
+		}
+
+		// Verify branch still exists
+		cmd = exec.Command("git", "branch", "--list", "unmerged-branch")
+		cmd.Dir = repo.Root
+		branchOut, err := cmd.Output()
+		if err != nil {
+			t.Fatalf("git branch --list failed: %v", err)
+		}
+		if !strings.Contains(string(branchOut), "unmerged-branch") {
+			t.Error("branch should still exist after worktree deletion with -d")
+		}
+	})
+
+	// PR #64 fix: shell integration works correctly when branch deletion fails
+	t.Run("with_unmerged_branch_shell_integration", func(t *testing.T) {
+		t.Parallel()
+		tests := []struct {
+			name       string
+			shell      string
+			scriptFunc func(repoRoot, wtPath, pathDir, branchName string) string
+		}{
+			{
+				name:  "bash",
+				shell: "bash",
+				scriptFunc: func(repoRoot, wtPath, pathDir, branchName string) string {
+					return fmt.Sprintf(`
+set -e
+export PATH="%s:$PATH"
+eval "$(git wt --init bash)"
+cd %q
+git wt -d %s
+pwd
+`, pathDir, wtPath, branchName)
+				},
+			},
+			{
+				name:  "zsh",
+				shell: "zsh",
+				scriptFunc: func(repoRoot, wtPath, pathDir, branchName string) string {
+					return fmt.Sprintf(`
+set -e
+export PATH="%s:$PATH"
+eval "$(git wt --init zsh)"
+cd %q
+git wt -d %s
+pwd
+`, pathDir, wtPath, branchName)
+				},
+			},
+			{
+				name:  "fish",
+				shell: "fish",
+				scriptFunc: func(repoRoot, wtPath, pathDir, branchName string) string {
+					return fmt.Sprintf(`
+set -x PATH %s $PATH
+git wt --init fish | source
+cd %q
+git wt -d %s
+pwd
+`, pathDir, wtPath, branchName)
+				},
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
+				if _, err := exec.LookPath(tt.shell); err != nil {
+					t.Skipf("%s not available", tt.shell)
+				}
+
+				repo := testutil.NewTestRepo(t)
+				repo.CreateFile("README.md", "# Test")
+				repo.Commit("initial commit")
+
+				branchName := fmt.Sprintf("unmerged-%s-test", tt.shell)
+
+				out, err := runGitWt(t, binPath, repo.Root, branchName)
+				if err != nil {
+					t.Fatalf("failed to create worktree: %v", err)
+				}
+				wtPath := worktreePath(out)
+
+				if err := os.WriteFile(filepath.Join(wtPath, "new.txt"), []byte("content"), 0600); err != nil {
+					t.Fatalf("failed to create file: %v", err)
+				}
+				cmd := exec.Command("git", "add", "-A")
+				cmd.Dir = wtPath
+				if err := cmd.Run(); err != nil {
+					t.Fatalf("git add failed: %v", err)
+				}
+				cmd = exec.Command("git", "commit", "-m", "unmerged commit")
+				cmd.Dir = wtPath
+				if err := cmd.Run(); err != nil {
+					t.Fatalf("git commit failed: %v", err)
+				}
+
+				script := tt.scriptFunc(repo.Root, wtPath, filepath.Dir(binPath), branchName)
+				cmd = exec.Command(tt.shell, "-c", script) //#nosec G204
+				cmdOut, err := cmd.CombinedOutput()
+				if err != nil {
+					t.Fatalf("%s shell integration failed: %v\noutput: %s", tt.shell, err, cmdOut)
+				}
+
+				output := strings.TrimSpace(string(cmdOut))
+				lines := strings.Split(output, "\n")
+				pwd := lines[len(lines)-1]
+
+				if pwd != repo.Root {
+					t.Errorf("pwd should be main repo root %q after deleting current worktree, got: %s\nfull output: %s", repo.Root, pwd, output)
+				}
+			})
+		}
+	})
+
+	t.Run("multiple", func(t *testing.T) {
+		t.Parallel()
+		repo := testutil.NewTestRepo(t)
+		repo.CreateFile("README.md", "# Test")
+		repo.Commit("initial commit")
+
+		outA, err := runGitWt(t, binPath, repo.Root, "del-a")
+		if err != nil {
+			t.Fatalf("failed to create worktree del-a: %v", err)
+		}
+		outB, err := runGitWt(t, binPath, repo.Root, "del-b")
+		if err != nil {
+			t.Fatalf("failed to create worktree del-b: %v", err)
+		}
+		outC, err := runGitWt(t, binPath, repo.Root, "del-c")
+		if err != nil {
+			t.Fatalf("failed to create worktree del-c: %v", err)
+		}
+
+		pathA := worktreePath(outA)
+		pathB := worktreePath(outB)
+		pathC := worktreePath(outC)
+
+		out, err := runGitWt(t, binPath, repo.Root, "-D", "del-a", "del-b", "del-c")
+		if err != nil {
+			t.Fatalf("git-wt -D with multiple args failed: %v\noutput: %s", err, out)
+		}
+
+		for _, path := range []string{pathA, pathB, pathC} {
+			if _, err := os.Stat(path); !os.IsNotExist(err) {
+				t.Errorf("worktree should have been deleted at %s", path)
+			}
+		}
+
+		if !strings.Contains(out, "del-a") {
+			t.Errorf("output should contain deletion message for 'del-a', got: %s", out)
+		}
+		if !strings.Contains(out, "del-b") {
+			t.Errorf("output should contain deletion message for 'del-b', got: %s", out)
+		}
+		if !strings.Contains(out, "del-c") {
+			t.Errorf("output should contain deletion message for 'del-c', got: %s", out)
+		}
+	})
+
+	t.Run("multiple_stops_on_error", func(t *testing.T) {
+		t.Parallel()
+		repo := testutil.NewTestRepo(t)
+		repo.CreateFile("README.md", "# Test")
+		repo.Commit("initial commit")
+
+		_, err := runGitWt(t, binPath, repo.Root, "stop-a")
+		if err != nil {
+			t.Fatalf("failed to create worktree stop-a: %v", err)
+		}
+		outC, err := runGitWt(t, binPath, repo.Root, "stop-c")
+		if err != nil {
+			t.Fatalf("failed to create worktree stop-c: %v", err)
+		}
+		pathC := worktreePath(outC)
+
+		// Try to delete: stop-a (exists), stop-b (does NOT exist), stop-c (exists)
+		out, err := runGitWt(t, binPath, repo.Root, "-D", "stop-a", "stop-b", "stop-c")
+		if err == nil {
+			t.Fatal("command should fail when deleting non-existent worktree")
+		}
+
+		if !strings.Contains(out, "stop-b") {
+			t.Errorf("error should mention 'stop-b', got: %s", out)
+		}
+
+		// stop-c should NOT be deleted (execution stopped at stop-b error)
+		if _, err := os.Stat(pathC); os.IsNotExist(err) {
+			t.Error("stop-c should NOT have been deleted (execution should stop on error)")
+		}
+	})
+}
+
+func TestE2E_DeleteBranch(t *testing.T) {
+	t.Parallel()
+	binPath := buildBinary(t)
+
+	t.Run("branch_only", func(t *testing.T) {
+		t.Parallel()
+		repo := testutil.NewTestRepo(t)
+		repo.CreateFile("README.md", "# Test")
+		repo.Commit("initial commit")
+
+		branchName := "branch-only"
+		cmd := exec.Command("git", "branch", branchName)
+		cmd.Dir = repo.Root
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("failed to create branch: %v", err)
+		}
+
+		cmd = exec.Command("git", "branch", "--list", branchName)
+		cmd.Dir = repo.Root
+		out, err := cmd.Output()
+		if err != nil || !strings.Contains(string(out), branchName) {
+			t.Fatalf("branch should exist before deletion")
+		}
+
+		wtOut, err := runGitWt(t, binPath, repo.Root, "-D", branchName)
+		if err != nil {
+			t.Fatalf("failed to delete branch-only: %v, output: %s", err, wtOut)
+		}
+
+		if !strings.Contains(wtOut, "Deleted branch") || !strings.Contains(wtOut, "no worktree was associated") {
+			t.Errorf("output should indicate branch-only deletion, got: %s", wtOut)
+		}
+
+		cmd = exec.Command("git", "branch", "--list", branchName)
+		cmd.Dir = repo.Root
+		out, err = cmd.Output()
+		if err != nil {
+			t.Fatalf("failed to list branches: %v", err)
+		}
+		if strings.Contains(string(out), branchName) {
+			t.Error("branch should have been deleted")
+		}
+	})
+
+	t.Run("not_exists", func(t *testing.T) {
+		t.Parallel()
+		repo := testutil.NewTestRepo(t)
+		repo.CreateFile("README.md", "# Test")
+		repo.Commit("initial commit")
+
+		out, err := runGitWt(t, binPath, repo.Root, "-D", "non-existent-branch")
+		if err == nil {
+			t.Fatal("should fail when deleting non-existent branch")
+		}
+
+		if !strings.Contains(out, "no worktree or branch found") {
+			t.Errorf("error should mention 'no worktree or branch found', got: %s", out)
+		}
+	})
+}
+
+// TestE2E_DeleteCurrentWorktree tests deleting the worktree you're currently in.
+// This tests the fix for issue #58: safely remove current worktree and return to repository root.
+func TestE2E_DeleteCurrentWorktree(t *testing.T) {
+	t.Parallel()
+	binPath := buildBinary(t)
+
+	t.Run("outputs_main_repo_path_with_shell_integration", func(t *testing.T) {
+		t.Parallel()
+		repo := testutil.NewTestRepo(t)
+		repo.CreateFile("README.md", "# Test")
+		repo.Commit("initial commit")
+
+		out, err := runGitWt(t, binPath, repo.Root, "current-wt")
+		if err != nil {
+			t.Fatalf("failed to create worktree: %v", err)
+		}
+		wtPath := worktreePath(out)
+
+		cmd := exec.Command(binPath, "-D", "current-wt")
+		cmd.Dir = wtPath
+		cmd.Env = append(os.Environ(), "GIT_WT_SHELL_INTEGRATION=1")
+		var stdoutBuf, stderrBuf bytes.Buffer
+		cmd.Stdout = &stdoutBuf
+		cmd.Stderr = &stderrBuf
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("git-wt -D failed: %v\nstderr: %s", err, stderrBuf.String())
+		}
+		stdout := strings.TrimSpace(stdoutBuf.String())
+		if stdout == "" {
+			t.Fatal("expected output but got none")
+		}
+
+		lines := strings.Split(stdout, "\n")
+		lastLine := lines[len(lines)-1]
+
+		if lastLine != repo.Root {
+			t.Errorf("last line should be main repo path %q, got %q", repo.Root, lastLine)
+		}
+
+		if _, err := os.Stat(wtPath); !os.IsNotExist(err) {
+			t.Error("worktree should have been deleted")
+		}
+	})
+
+	t.Run("no_path_without_shell_integration", func(t *testing.T) {
+		t.Parallel()
+		repo := testutil.NewTestRepo(t)
+		repo.CreateFile("README.md", "# Test")
+		repo.Commit("initial commit")
+
+		out, err := runGitWt(t, binPath, repo.Root, "current-wt-no-shell")
+		if err != nil {
+			t.Fatalf("failed to create worktree: %v", err)
+		}
+		wtPath := worktreePath(out)
+
+		stdout, stderr, err := runGitWtStdout(t, binPath, wtPath, "-D", "current-wt-no-shell")
+		if err != nil {
+			t.Fatalf("git-wt -D failed: %v\nstderr: %s", err, stderr)
+		}
+
+		trimmed := strings.TrimSpace(stdout)
+		if trimmed == "" {
+			t.Fatal("expected output but got none")
+		}
+
+		lines := strings.Split(trimmed, "\n")
+		lastLine := lines[len(lines)-1]
+
+		if !strings.Contains(lastLine, "Deleted") {
+			t.Errorf("last line should be a deletion message containing %q, got %q", "Deleted", lastLine)
+		}
+
+		if _, err := os.Stat(wtPath); !os.IsNotExist(err) {
+			t.Error("worktree should have been deleted")
+		}
+	})
+
+	t.Run("delete_other_worktree_does_not_output_path", func(t *testing.T) {
+		t.Parallel()
+		repo := testutil.NewTestRepo(t)
+		repo.CreateFile("README.md", "# Test")
+		repo.Commit("initial commit")
+
+		_, err := runGitWt(t, binPath, repo.Root, "wt-a")
+		if err != nil {
+			t.Fatalf("failed to create worktree wt-a: %v", err)
+		}
+		outB, err := runGitWt(t, binPath, repo.Root, "wt-b")
+		if err != nil {
+			t.Fatalf("failed to create worktree wt-b: %v", err)
+		}
+		wtPathB := worktreePath(outB)
+
+		stdout, stderr, err := runGitWtStdout(t, binPath, wtPathB, "-D", "wt-a")
+		if err != nil {
+			t.Fatalf("git-wt -D failed: %v\nstderr: %s", err, stderr)
+		}
+
+		trimmed := strings.TrimSpace(stdout)
+		if trimmed == "" {
+			t.Fatal("expected output but got none")
+		}
+
+		lines := strings.Split(trimmed, "\n")
+		lastLine := lines[len(lines)-1]
+
+		if !strings.Contains(lastLine, "Deleted") {
+			t.Errorf("last line should be a deletion message containing %q, got %q", "Deleted", lastLine)
+		}
+	})
+
+	t.Run("safe_delete_with_shell_integration", func(t *testing.T) {
+		t.Parallel()
+		repo := testutil.NewTestRepo(t)
+		repo.CreateFile("README.md", "# Test")
+		repo.Commit("initial commit")
+
+		out, err := runGitWt(t, binPath, repo.Root, "safe-del-wt")
+		if err != nil {
+			t.Fatalf("failed to create worktree: %v", err)
+		}
+		wtPath := worktreePath(out)
+
+		cmd := exec.Command(binPath, "-d", "safe-del-wt")
+		cmd.Dir = wtPath
+		cmd.Env = append(os.Environ(), "GIT_WT_SHELL_INTEGRATION=1")
+		var stdoutBuf, stderrBuf bytes.Buffer
+		cmd.Stdout = &stdoutBuf
+		cmd.Stderr = &stderrBuf
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("git-wt -d failed: %v\nstderr: %s", err, stderrBuf.String())
+		}
+		stdout := strings.TrimSpace(stdoutBuf.String())
+		if stdout == "" {
+			t.Fatal("expected output but got none")
+		}
+
+		lines := strings.Split(stdout, "\n")
+		lastLine := lines[len(lines)-1]
+
+		if lastLine != repo.Root {
+			t.Errorf("last line should be main repo path %q, got %q", repo.Root, lastLine)
+		}
+	})
+
+	t.Run("shell_integration", func(t *testing.T) {
+		t.Parallel()
+		tests := []struct {
+			name       string
+			shell      string
+			scriptFunc func(repoRoot, wtPath, pathDir, branchName string) string
+		}{
+			{
+				name:  "bash",
+				shell: "bash",
+				scriptFunc: func(repoRoot, wtPath, pathDir, branchName string) string {
+					return fmt.Sprintf(`
+set -e
+export PATH="%s:$PATH"
+eval "$(git wt --init bash)"
+cd %q
+git wt -D %s
+pwd
+`, pathDir, wtPath, branchName)
+				},
+			},
+			{
+				name:  "zsh",
+				shell: "zsh",
+				scriptFunc: func(repoRoot, wtPath, pathDir, branchName string) string {
+					return fmt.Sprintf(`
+set -e
+export PATH="%s:$PATH"
+eval "$(git wt --init zsh)"
+cd %q
+git wt -D %s
+pwd
+`, pathDir, wtPath, branchName)
+				},
+			},
+			{
+				name:  "fish",
+				shell: "fish",
+				scriptFunc: func(repoRoot, wtPath, pathDir, branchName string) string {
+					return fmt.Sprintf(`
+set -x PATH %s $PATH
+git wt --init fish | source
+cd %q
+git wt -D %s
+pwd
+`, pathDir, wtPath, branchName)
+				},
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
+				if _, err := exec.LookPath(tt.shell); err != nil {
+					t.Skipf("%s not available", tt.shell)
+				}
+
+				repo := testutil.NewTestRepo(t)
+				repo.CreateFile("README.md", "# Test")
+				repo.Commit("initial commit")
+
+				branchName := fmt.Sprintf("del-%s-test", tt.shell)
+
+				out, err := runGitWt(t, binPath, repo.Root, branchName)
+				if err != nil {
+					t.Fatalf("failed to create worktree: %v", err)
+				}
+				wtPath := worktreePath(out)
+
+				script := tt.scriptFunc(repo.Root, wtPath, filepath.Dir(binPath), branchName)
+				cmd := exec.Command(tt.shell, "-c", script) //#nosec G204
+				cmdOut, err := cmd.CombinedOutput()
+				if err != nil {
+					t.Fatalf("%s shell integration failed: %v\noutput: %s", tt.shell, err, cmdOut)
+				}
+
+				output := strings.TrimSpace(string(cmdOut))
+				lines := strings.Split(output, "\n")
+				pwd := lines[len(lines)-1]
+
+				if pwd != repo.Root {
+					t.Errorf("pwd should be main repo root %q after deleting current worktree, got: %s", repo.Root, pwd)
+				}
+			})
+		}
+	})
+}
